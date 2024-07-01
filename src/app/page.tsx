@@ -1,29 +1,22 @@
 import { HomeContent } from "./HomeContent";
+import { getInitialStations } from "@/util/callApi";
 
-interface StationResponse {
-  station_codes: string[];
-}
-
-// This function will run on the server
-async function getInitialStations(): Promise<StationResponse> {
-  try {
-    const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-    const host = process.env.VERCEL_URL || "localhost:3000";
-    const response = await fetch(`${protocol}://${host}/api/stations`, {
-      next: { revalidate: 3600 },
-    });
-    if (!response.ok) {
-      throw new Error("Failed to fetch stations");
-    }
-    return response.json();
-  } catch (error) {
-    console.error("Failed to fetch stations:", error);
-    return { station_codes: [] };
-  }
-}
-
-export default async function Home() {
-  // Fetch station data on the server
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: { start?: string; end?: string };
+}) {
   const initialStationData = await getInitialStations();
-  return <HomeContent initialStationData={initialStationData} />;
+  const start =
+    searchParams.start ||
+    new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const end = searchParams.end || new Date().toISOString();
+
+  return (
+    <HomeContent
+      initialStationData={initialStationData}
+      defaultStart={start}
+      defaultEnd={end}
+    />
+  );
 }

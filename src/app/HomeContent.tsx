@@ -1,7 +1,13 @@
 "use client";
-
 import { useEffect, useState, useRef } from "react";
 import { FaChevronDown } from "react-icons/fa";
+import {
+  getStationData,
+  getWeatherData,
+  getWeatherReadings,
+  getHourlyWeather,
+  getDailyWeather,
+} from "@/util/callApi";
 
 interface StationResponse {
   station_codes: string[];
@@ -9,8 +15,12 @@ interface StationResponse {
 
 export function HomeContent({
   initialStationData,
+  defaultStart,
+  defaultEnd,
 }: {
   initialStationData: StationResponse;
+  defaultStart: string;
+  defaultEnd: string;
 }) {
   const [stationCodes, setStationCodes] = useState<string[]>(
     initialStationData.station_codes
@@ -19,6 +29,12 @@ export function HomeContent({
   const [selectedStation, setSelectedStation] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  const [stationData, setStationData] = useState(null);
+  const [weatherData, setWeatherData] = useState(null);
+  const [weatherReadings, setWeatherReadings] = useState(null);
+  const [hourlyWeather, setHourlyWeather] = useState(null);
+  const [dailyWeather, setDailyWeather] = useState(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -29,10 +45,48 @@ export function HomeContent({
         setShowDropdown(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (selectedStation) {
+      fetchAllData(selectedStation);
+    }
+  }, [selectedStation]);
+
+  const fetchAllData = async (stationCode: string) => {
+    const stationDataResponse = await getStationData(stationCode);
+    setStationData(stationDataResponse);
+
+    const weatherDataResponse = await getWeatherData(
+      stationCode,
+      defaultStart,
+      defaultEnd
+    );
+    setWeatherData(weatherDataResponse);
+
+    const weatherReadingsResponse = await getWeatherReadings(
+      stationCode,
+      defaultStart,
+      defaultEnd
+    );
+    setWeatherReadings(weatherReadingsResponse);
+
+    const hourlyWeatherResponse = await getHourlyWeather(
+      stationCode,
+      defaultStart,
+      defaultEnd
+    );
+    setHourlyWeather(hourlyWeatherResponse);
+
+    const dailyWeatherResponse = await getDailyWeather(
+      stationCode,
+      defaultStart,
+      defaultEnd
+    );
+    setDailyWeather(dailyWeatherResponse);
+  };
 
   const handleStationSelect = (code: string) => {
     setSelectedStation(code);
@@ -91,17 +145,56 @@ export function HomeContent({
           )}
         </div>
       </header>
-      <main className="flex-grow p-4 flex items-center justify-center">
+      <main className="flex-grow p-4 overflow-auto">
         {selectedStation === "" ? (
-          <p className="text-xl text-gray-600">Select a station to continue!</p>
+          <p className="text-xl text-gray-600 text-center">
+            Select a station to continue!
+          </p>
         ) : (
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">
               Station: {selectedStation}
             </h2>
-            <p className="text-lg text-gray-600">
-              Placeholder content for {selectedStation}
-            </p>
+            {stationData && (
+              <div className="mb-4">
+                <h3 className="text-xl font-semibold">Station Data</h3>
+                <pre className="text-left overflow-x-auto">
+                  {JSON.stringify(stationData, null, 2)}
+                </pre>
+              </div>
+            )}
+            {weatherData && (
+              <div className="mb-4">
+                <h3 className="text-xl font-semibold">Weather Data</h3>
+                <pre className="text-left overflow-x-auto">
+                  {JSON.stringify(weatherData, null, 2)}
+                </pre>
+              </div>
+            )}
+            {weatherReadings && (
+              <div className="mb-4">
+                <h3 className="text-xl font-semibold">Weather Readings</h3>
+                <pre className="text-left overflow-x-auto">
+                  {JSON.stringify(weatherReadings, null, 2)}
+                </pre>
+              </div>
+            )}
+            {hourlyWeather && (
+              <div className="mb-4">
+                <h3 className="text-xl font-semibold">Hourly Weather</h3>
+                <pre className="text-left overflow-x-auto">
+                  {JSON.stringify(hourlyWeather, null, 2)}
+                </pre>
+              </div>
+            )}
+            {dailyWeather && (
+              <div className="mb-4">
+                <h3 className="text-xl font-semibold">Daily Weather</h3>
+                <pre className="text-left overflow-x-auto">
+                  {JSON.stringify(dailyWeather, null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
         )}
       </main>
