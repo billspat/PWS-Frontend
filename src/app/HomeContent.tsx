@@ -8,6 +8,7 @@ import {
   getHourlyWeather,
   getDailyWeather,
 } from "@/util/callApi";
+import { useRouter } from "next/navigation";
 
 interface StationResponse {
   station_codes: string[];
@@ -15,26 +16,44 @@ interface StationResponse {
 
 export function HomeContent({
   initialStationData,
+  initialStationCode,
   defaultStart,
   defaultEnd,
+  defaultStartYMD,
+  defaultEndYMD,
+  initialStationDetails,
+  initialWeatherData,
+  initialWeatherReadings,
+  initialHourlyWeather,
+  initialDailyWeather,
 }: {
   initialStationData: StationResponse;
+  initialStationCode: string;
   defaultStart: string;
   defaultEnd: string;
+  defaultStartYMD: string;
+  defaultEndYMD: string;
+  initialStationDetails: any;
+  initialWeatherData: any;
+  initialWeatherReadings: any;
+  initialHourlyWeather: any;
+  initialDailyWeather: any;
 }) {
-  const [stationCodes, setStationCodes] = useState<string[]>(
-    initialStationData.station_codes
-  );
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStation, setSelectedStation] = useState("");
+  const [stationCodes] = useState<string[]>(initialStationData.station_codes);
+  const [searchTerm, setSearchTerm] = useState(initialStationCode);
+  const [selectedStation, setSelectedStation] = useState(initialStationCode);
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const [stationData, setStationData] = useState(null);
-  const [weatherData, setWeatherData] = useState(null);
-  const [weatherReadings, setWeatherReadings] = useState(null);
-  const [hourlyWeather, setHourlyWeather] = useState(null);
-  const [dailyWeather, setDailyWeather] = useState(null);
+  const [stationDetails, setStationDetails] = useState(initialStationDetails);
+  const [weatherData, setWeatherData] = useState(initialWeatherData);
+  const [weatherReadings, setWeatherReadings] = useState(
+    initialWeatherReadings
+  );
+  const [hourlyWeather, setHourlyWeather] = useState(initialHourlyWeather);
+  const [dailyWeather, setDailyWeather] = useState(initialDailyWeather);
+
+  const router = useRouter();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -50,42 +69,34 @@ export function HomeContent({
   }, []);
 
   useEffect(() => {
-    if (selectedStation) {
+    if (selectedStation && selectedStation !== initialStationCode) {
       fetchAllData(selectedStation);
+      router.push(
+        `?station=${selectedStation}&start=${defaultStart}&end=${defaultEnd}`
+      );
     }
-  }, [selectedStation]);
+  }, [selectedStation, initialStationCode, defaultStart, defaultEnd, router]);
 
   const fetchAllData = async (stationCode: string) => {
-    const stationDataResponse = await getStationData(stationCode);
-    setStationData(stationDataResponse);
+    const [
+      newStationDetails,
+      newWeatherData,
+      newWeatherReadings,
+      newHourlyWeather,
+      newDailyWeather,
+    ] = await Promise.all([
+      getStationData(stationCode),
+      getWeatherData(stationCode, defaultStart, defaultEnd),
+      getWeatherReadings(stationCode, defaultStart, defaultEnd),
+      getHourlyWeather(stationCode, defaultStart, defaultEnd),
+      getDailyWeather(stationCode, defaultStart, defaultEnd),
+    ]);
 
-    const weatherDataResponse = await getWeatherData(
-      stationCode,
-      defaultStart,
-      defaultEnd
-    );
-    setWeatherData(weatherDataResponse);
-
-    const weatherReadingsResponse = await getWeatherReadings(
-      stationCode,
-      defaultStart,
-      defaultEnd
-    );
-    setWeatherReadings(weatherReadingsResponse);
-
-    const hourlyWeatherResponse = await getHourlyWeather(
-      stationCode,
-      defaultStart,
-      defaultEnd
-    );
-    setHourlyWeather(hourlyWeatherResponse);
-
-    const dailyWeatherResponse = await getDailyWeather(
-      stationCode,
-      defaultStart,
-      defaultEnd
-    );
-    setDailyWeather(dailyWeatherResponse);
+    setStationDetails(newStationDetails);
+    setWeatherData(newWeatherData);
+    setWeatherReadings(newWeatherReadings);
+    setHourlyWeather(newHourlyWeather);
+    setDailyWeather(newDailyWeather);
   };
 
   const handleStationSelect = (code: string) => {
@@ -155,44 +166,136 @@ export function HomeContent({
             <h2 className="text-2xl font-bold mb-4">
               Station: {selectedStation}
             </h2>
-            {stationData && (
+            {stationDetails && (
               <div className="mb-4">
                 <h3 className="text-xl font-semibold">Station Data</h3>
                 <pre className="text-left overflow-x-auto">
-                  {JSON.stringify(stationData, null, 2)}
+                  {JSON.stringify(stationDetails, null, 2)}
                 </pre>
               </div>
             )}
             {weatherData && (
               <div className="mb-4">
-                <h3 className="text-xl font-semibold">Weather Data</h3>
-                <pre className="text-left overflow-x-auto">
-                  {JSON.stringify(weatherData, null, 2)}
-                </pre>
+                <h3 className="text-xl font-semibold mb-2">Weather Data</h3>
+                <div className="flex flex-nowrap space-x-4 overflow-x-auto pb-4">
+                  {Array.isArray(weatherData) ? (
+                    weatherData.map((entry, index) => (
+                      <div
+                        key={index}
+                        className="flex-shrink-0 w-64 bg-gray-100 p-4 rounded shadow"
+                      >
+                        <h4 className="font-semibold mb-2">
+                          Entry {index + 1}
+                        </h4>
+                        <div className="overflow-x-auto">
+                          <pre className="text-xs whitespace-pre">
+                            {JSON.stringify(entry, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex-shrink-0 w-full bg-gray-100 p-4 rounded shadow">
+                      <div className="overflow-x-auto">
+                        <pre className="text-xs whitespace-pre">
+                          {JSON.stringify(weatherData, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             {weatherReadings && (
               <div className="mb-4">
-                <h3 className="text-xl font-semibold">Weather Readings</h3>
-                <pre className="text-left overflow-x-auto">
-                  {JSON.stringify(weatherReadings, null, 2)}
-                </pre>
+                <h3 className="text-xl font-semibold mb-2">Weather Readings</h3>
+                <div className="flex flex-nowrap space-x-4 overflow-x-auto pb-4">
+                  {Array.isArray(weatherReadings) ? (
+                    weatherReadings.map((entry, index) => (
+                      <div
+                        key={index}
+                        className="flex-shrink-0 w-64 bg-gray-100 p-4 rounded shadow"
+                      >
+                        <h4 className="font-semibold mb-2">
+                          Reading {index + 1}
+                        </h4>
+                        <div className="overflow-x-auto">
+                          <pre className="text-xs whitespace-pre">
+                            {JSON.stringify(entry, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex-shrink-0 w-full bg-gray-100 p-4 rounded shadow">
+                      <div className="overflow-x-auto">
+                        <pre className="text-xs whitespace-pre">
+                          {JSON.stringify(weatherReadings, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             {hourlyWeather && (
               <div className="mb-4">
-                <h3 className="text-xl font-semibold">Hourly Weather</h3>
-                <pre className="text-left overflow-x-auto">
-                  {JSON.stringify(hourlyWeather, null, 2)}
-                </pre>
+                <h3 className="text-xl font-semibold mb-2">Hourly Weather</h3>
+                <div className="flex flex-nowrap space-x-4 overflow-x-auto pb-4">
+                  {Array.isArray(hourlyWeather) ? (
+                    hourlyWeather.map((entry, index) => (
+                      <div
+                        key={index}
+                        className="flex-shrink-0 w-64 bg-gray-100 p-4 rounded shadow"
+                      >
+                        <h4 className="font-semibold mb-2">Hour {index + 1}</h4>
+                        <div className="overflow-x-auto">
+                          <pre className="text-xs whitespace-pre">
+                            {JSON.stringify(entry, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex-shrink-0 w-full bg-gray-100 p-4 rounded shadow">
+                      <div className="overflow-x-auto">
+                        <pre className="text-xs whitespace-pre">
+                          {JSON.stringify(hourlyWeather, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             {dailyWeather && (
               <div className="mb-4">
-                <h3 className="text-xl font-semibold">Daily Weather</h3>
-                <pre className="text-left overflow-x-auto">
-                  {JSON.stringify(dailyWeather, null, 2)}
-                </pre>
+                <h3 className="text-xl font-semibold mb-2">Daily Weather</h3>
+                <div className="flex flex-nowrap space-x-4 overflow-x-auto pb-4">
+                  {Array.isArray(dailyWeather) ? (
+                    dailyWeather.map((entry, index) => (
+                      <div
+                        key={index}
+                        className="flex-shrink-0 w-64 bg-gray-100 p-4 rounded shadow"
+                      >
+                        <h4 className="font-semibold mb-2">Day {index + 1}</h4>
+                        <div className="overflow-x-auto">
+                          <pre className="text-xs whitespace-pre">
+                            {JSON.stringify(entry, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex-shrink-0 w-full bg-gray-100 p-4 rounded shadow">
+                      <div className="overflow-x-auto">
+                        <pre className="text-xs whitespace-pre">
+                          {JSON.stringify(dailyWeather, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
