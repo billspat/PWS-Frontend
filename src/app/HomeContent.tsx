@@ -21,11 +21,6 @@ export function HomeContent({
   defaultEnd,
   defaultStartYMD,
   defaultEndYMD,
-  initialStationDetails,
-  initialWeatherData,
-  initialWeatherReadings,
-  initialHourlyWeather,
-  initialDailyWeather,
 }: {
   initialStationData: StationResponse;
   initialStationCode: string;
@@ -33,11 +28,6 @@ export function HomeContent({
   defaultEnd: string;
   defaultStartYMD: string;
   defaultEndYMD: string;
-  initialStationDetails: any;
-  initialWeatherData: any;
-  initialWeatherReadings: any;
-  initialHourlyWeather: any;
-  initialDailyWeather: any;
 }) {
   const [stationCodes] = useState<string[]>(initialStationData.station_codes);
   const [searchTerm, setSearchTerm] = useState(initialStationCode);
@@ -45,13 +35,13 @@ export function HomeContent({
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const [stationDetails, setStationDetails] = useState(initialStationDetails);
-  const [weatherData, setWeatherData] = useState(initialWeatherData);
-  const [weatherReadings, setWeatherReadings] = useState(
-    initialWeatherReadings
-  );
-  const [hourlyWeather, setHourlyWeather] = useState(initialHourlyWeather);
-  const [dailyWeather, setDailyWeather] = useState(initialDailyWeather);
+  const [stationDetails, setStationDetails] = useState(null);
+  const [weatherData, setWeatherData] = useState(null);
+  const [weatherReadings, setWeatherReadings] = useState(null);
+  const [hourlyWeather, setHourlyWeather] = useState(null);
+  const [dailyWeather, setDailyWeather] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -69,34 +59,49 @@ export function HomeContent({
   }, []);
 
   useEffect(() => {
-    if (selectedStation && selectedStation !== initialStationCode) {
+    if (selectedStation) {
       fetchAllData(selectedStation);
       router.push(
         `?station=${selectedStation}&start=${defaultStart}&end=${defaultEnd}`
       );
     }
-  }, [selectedStation, initialStationCode, defaultStart, defaultEnd, router]);
+  }, [selectedStation, defaultStart, defaultEnd, router]);
 
   const fetchAllData = async (stationCode: string) => {
-    const [
-      newStationDetails,
-      newWeatherData,
-      newWeatherReadings,
-      newHourlyWeather,
-      newDailyWeather,
-    ] = await Promise.all([
-      getStationData(stationCode),
-      getWeatherData(stationCode, defaultStart, defaultEnd),
-      getWeatherReadings(stationCode, defaultStart, defaultEnd),
-      getHourlyWeather(stationCode, defaultStart, defaultEnd),
-      getDailyWeather(stationCode, defaultStart, defaultEnd),
-    ]);
+    setIsLoading(true);
+    setError(null);
+    setStationDetails(null);
+    setWeatherData(null);
+    setWeatherReadings(null);
+    setHourlyWeather(null);
+    setDailyWeather(null);
 
-    setStationDetails(newStationDetails);
-    setWeatherData(newWeatherData);
-    setWeatherReadings(newWeatherReadings);
-    setHourlyWeather(newHourlyWeather);
-    setDailyWeather(newDailyWeather);
+    try {
+      const [
+        newStationDetails,
+        newWeatherData,
+        newWeatherReadings,
+        newHourlyWeather,
+        newDailyWeather,
+      ] = await Promise.all([
+        getStationData(stationCode),
+        getWeatherData(stationCode, defaultStartYMD, defaultEndYMD),
+        getWeatherReadings(stationCode, defaultStartYMD, defaultEndYMD),
+        getHourlyWeather(stationCode, defaultStartYMD, defaultEndYMD),
+        getDailyWeather(stationCode, defaultStartYMD, defaultEndYMD),
+      ]);
+
+      setStationDetails(newStationDetails);
+      setWeatherData(newWeatherData);
+      setWeatherReadings(newWeatherReadings);
+      setHourlyWeather(newHourlyWeather);
+      setDailyWeather(newDailyWeather);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError("Failed to fetch weather data. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleStationSelect = (code: string) => {
@@ -161,6 +166,12 @@ export function HomeContent({
           <p className="text-xl text-gray-600 text-center">
             Select a station to continue!
           </p>
+        ) : isLoading ? (
+          <p className="text-xl text-gray-600 text-center">
+            Loading weather data...
+          </p>
+        ) : error ? (
+          <p className="text-xl text-red-600 text-center">{error}</p>
         ) : (
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">

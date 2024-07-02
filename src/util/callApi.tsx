@@ -76,7 +76,13 @@ export async function getWeatherReadings(
   try {
     const url = `${getBaseUrl()}/api/weather/${stationCode}/readings?start=${start}&end=${end}`;
     console.log("Fetching weather readings from:", url);
-    const response = await fetch(url, { next: { revalidate: 60 } });
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+      },
+      next: { revalidate: 60 },
+    });
     if (!response.ok) {
       throw new Error(
         `Failed to fetch weather readings: ${response.statusText}`
@@ -100,10 +106,15 @@ export async function getHourlyWeather(
   try {
     const url = `${getBaseUrl()}/api/weather/${stationCode}/hourly?start=${start}&end=${end}`;
     console.log("Fetching hourly weather data from:", url);
-    const response = await fetch(url, { next: { revalidate: 60 } });
+    const response = await fetch(url, {
+      headers: {
+        accept: "application/json",
+      },
+    });
     if (!response.ok) {
+      const errorText = await response.text();
       throw new Error(
-        `Failed to fetch hourly weather data: ${response.statusText}`
+        `Failed to fetch hourly weather data: ${response.statusText}, ${errorText}`
       );
     }
     return response.json();
@@ -112,7 +123,7 @@ export async function getHourlyWeather(
       `Failed to fetch hourly weather data for station ${stationCode}:`,
       error
     );
-    return null;
+    throw error;
   }
 }
 
