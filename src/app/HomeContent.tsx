@@ -1,17 +1,22 @@
 "use client";
+
 import { useEffect, useState, useRef } from "react";
 import { FaChevronDown } from "react-icons/fa";
 import {
   getStationData,
-  getWeatherData,
   getWeatherReadings,
   getHourlyWeather,
   getDailyWeather,
 } from "@/util/callApi";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { DebugContent } from "./DebugContent";
 
 interface StationResponse {
   station_codes: string[];
+}
+
+function formatDateYYYYMMDD(date: Date): string {
+  return date.toISOString().split("T")[0];
 }
 
 export function HomeContent({
@@ -34,16 +39,16 @@ export function HomeContent({
   const [selectedStation, setSelectedStation] = useState(initialStationCode);
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-
   const [stationDetails, setStationDetails] = useState(null);
-  const [weatherData, setWeatherData] = useState(null);
   const [weatherReadings, setWeatherReadings] = useState(null);
   const [hourlyWeather, setHourlyWeather] = useState(null);
   const [dailyWeather, setDailyWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("hourly");
 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -59,40 +64,44 @@ export function HomeContent({
   }, []);
 
   useEffect(() => {
-    if (selectedStation) {
-      fetchAllData(selectedStation);
-      router.push(
-        `?station=${selectedStation}&start=${defaultStart}&end=${defaultEnd}`
-      );
+    const stationFromURL = searchParams.get("station") || initialStationCode;
+    const startFromURL = searchParams.get("start") || defaultStart;
+    const endFromURL = searchParams.get("end") || defaultEnd;
+    if (stationFromURL) {
+      setSelectedStation(stationFromURL);
+      setSearchTerm(stationFromURL);
+      fetchAllData(stationFromURL, startFromURL, endFromURL);
     }
-  }, [selectedStation, defaultStart, defaultEnd, router]);
+  }, [searchParams, initialStationCode, defaultStart, defaultEnd]);
 
-  const fetchAllData = async (stationCode: string) => {
+  const fetchAllData = async (
+    stationCode: string,
+    start: string,
+    end: string
+  ) => {
     setIsLoading(true);
     setError(null);
     setStationDetails(null);
-    setWeatherData(null);
     setWeatherReadings(null);
     setHourlyWeather(null);
     setDailyWeather(null);
 
+    const startYMD = formatDateYYYYMMDD(new Date(start));
+    const endYMD = formatDateYYYYMMDD(new Date(end));
+
     try {
       const [
         newStationDetails,
-        newWeatherData,
         newWeatherReadings,
         newHourlyWeather,
         newDailyWeather,
       ] = await Promise.all([
         getStationData(stationCode),
-        getWeatherData(stationCode, defaultStartYMD, defaultEndYMD),
-        getWeatherReadings(stationCode, defaultStartYMD, defaultEndYMD),
-        getHourlyWeather(stationCode, defaultStartYMD, defaultEndYMD),
-        getDailyWeather(stationCode, defaultStartYMD, defaultEndYMD),
+        getWeatherReadings(stationCode, startYMD, endYMD),
+        getHourlyWeather(stationCode, startYMD, endYMD),
+        getDailyWeather(stationCode, startYMD, endYMD),
       ]);
-
       setStationDetails(newStationDetails);
-      setWeatherData(newWeatherData);
       setWeatherReadings(newWeatherReadings);
       setHourlyWeather(newHourlyWeather);
       setDailyWeather(newDailyWeather);
@@ -108,6 +117,7 @@ export function HomeContent({
     setSelectedStation(code);
     setSearchTerm(code);
     setShowDropdown(false);
+    router.push(`?station=${code}&start=${defaultStart}&end=${defaultEnd}`);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,155 +171,44 @@ export function HomeContent({
           )}
         </div>
       </header>
+
+      <div className="bg-[#2c7d64] text-white p-2">
+        <h2 className="text-4xl font-semibold">
+          {selectedStation || "No station selected"}
+        </h2>
+      </div>
+
+      <nav className="bg-gray-100 p-2">
+        <ul className="flex space-x-4">
+          {["hourly", "readings", "station", "debug"].map((tab) => (
+            <li key={tab}>
+              <button
+                className={`px-3 py-1 rounded ${
+                  activeTab === tab ? "bg-[#18453b] text-white" : "bg-white"
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
       <main className="flex-grow p-4 overflow-auto">
-        {selectedStation === "" ? (
-          <p className="text-xl text-gray-600 text-center">
-            Select a station to continue!
-          </p>
-        ) : isLoading ? (
-          <p className="text-xl text-gray-600 text-center">
-            Loading weather data...
-          </p>
-        ) : error ? (
-          <p className="text-xl text-red-600 text-center">{error}</p>
-        ) : (
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">
-              Station: {selectedStation}
-            </h2>
-            {stationDetails && (
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold">Station Data</h3>
-                <pre className="text-left overflow-x-auto">
-                  {JSON.stringify(stationDetails, null, 2)}
-                </pre>
-              </div>
-            )}
-            {weatherData && (
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold mb-2">Weather Data</h3>
-                <div className="flex flex-nowrap space-x-4 overflow-x-auto pb-4">
-                  {Array.isArray(weatherData) ? (
-                    weatherData.map((entry, index) => (
-                      <div
-                        key={index}
-                        className="flex-shrink-0 w-64 bg-gray-100 p-4 rounded shadow"
-                      >
-                        <h4 className="font-semibold mb-2">
-                          Entry {index + 1}
-                        </h4>
-                        <div className="overflow-x-auto">
-                          <pre className="text-xs whitespace-pre">
-                            {JSON.stringify(entry, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="flex-shrink-0 w-full bg-gray-100 p-4 rounded shadow">
-                      <div className="overflow-x-auto">
-                        <pre className="text-xs whitespace-pre">
-                          {JSON.stringify(weatherData, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            {weatherReadings && (
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold mb-2">Weather Readings</h3>
-                <div className="flex flex-nowrap space-x-4 overflow-x-auto pb-4">
-                  {Array.isArray(weatherReadings) ? (
-                    weatherReadings.map((entry, index) => (
-                      <div
-                        key={index}
-                        className="flex-shrink-0 w-64 bg-gray-100 p-4 rounded shadow"
-                      >
-                        <h4 className="font-semibold mb-2">
-                          Reading {index + 1}
-                        </h4>
-                        <div className="overflow-x-auto">
-                          <pre className="text-xs whitespace-pre">
-                            {JSON.stringify(entry, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="flex-shrink-0 w-full bg-gray-100 p-4 rounded shadow">
-                      <div className="overflow-x-auto">
-                        <pre className="text-xs whitespace-pre">
-                          {JSON.stringify(weatherReadings, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            {hourlyWeather && (
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold mb-2">Hourly Weather</h3>
-                <div className="flex flex-nowrap space-x-4 overflow-x-auto pb-4">
-                  {Array.isArray(hourlyWeather) ? (
-                    hourlyWeather.map((entry, index) => (
-                      <div
-                        key={index}
-                        className="flex-shrink-0 w-64 bg-gray-100 p-4 rounded shadow"
-                      >
-                        <h4 className="font-semibold mb-2">Hour {index + 1}</h4>
-                        <div className="overflow-x-auto">
-                          <pre className="text-xs whitespace-pre">
-                            {JSON.stringify(entry, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="flex-shrink-0 w-full bg-gray-100 p-4 rounded shadow">
-                      <div className="overflow-x-auto">
-                        <pre className="text-xs whitespace-pre">
-                          {JSON.stringify(hourlyWeather, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            {dailyWeather && (
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold mb-2">Daily Weather</h3>
-                <div className="flex flex-nowrap space-x-4 overflow-x-auto pb-4">
-                  {Array.isArray(dailyWeather) ? (
-                    dailyWeather.map((entry, index) => (
-                      <div
-                        key={index}
-                        className="flex-shrink-0 w-64 bg-gray-100 p-4 rounded shadow"
-                      >
-                        <h4 className="font-semibold mb-2">Day {index + 1}</h4>
-                        <div className="overflow-x-auto">
-                          <pre className="text-xs whitespace-pre">
-                            {JSON.stringify(entry, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="flex-shrink-0 w-full bg-gray-100 p-4 rounded shadow">
-                      <div className="overflow-x-auto">
-                        <pre className="text-xs whitespace-pre">
-                          {JSON.stringify(dailyWeather, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+        {activeTab === "hourly" && <div>Hourly Weather Content</div>}
+        {activeTab === "readings" && <div>Weather Readings Content</div>}
+        {activeTab === "station" && <div>Station Data Content</div>}
+        {activeTab === "debug" && (
+          <DebugContent
+            selectedStation={selectedStation}
+            isLoading={isLoading}
+            error={error}
+            stationDetails={stationDetails}
+            weatherReadings={weatherReadings}
+            hourlyWeather={hourlyWeather}
+            dailyWeather={dailyWeather}
+          />
         )}
       </main>
     </div>
