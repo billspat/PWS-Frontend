@@ -10,6 +10,7 @@ import {
 } from "@/util/callApi";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DebugContent } from "./DebugContent";
+import { HourlyContent } from "./HourlyContent";
 
 interface StationResponse {
   station_codes: string[];
@@ -180,7 +181,7 @@ export function HomeContent({
 
       <nav className="bg-gray-100 p-2">
         <ul className="flex space-x-4">
-          {["hourly", "readings", "station", "debug"].map((tab) => (
+          {["hourly", "readings", "Station Details", "debug"].map((tab) => (
             <li key={tab}>
               <button
                 className={`px-3 py-1 rounded ${
@@ -196,7 +197,15 @@ export function HomeContent({
       </nav>
 
       <main className="flex-grow p-4 overflow-auto">
-        {activeTab === "hourly" && <div>Hourly Weather Content</div>}
+        {activeTab === "hourly" && (
+          <div className="h-screen">
+            <HourlyContent
+              selectedStation={selectedStation}
+              isLoading={isLoading}
+              error={error}
+            />
+          </div>
+        )}
         {activeTab === "readings" && <div>Weather Readings Content</div>}
         {activeTab === "station" && <div>Station Data Content</div>}
         {activeTab === "debug" && (
