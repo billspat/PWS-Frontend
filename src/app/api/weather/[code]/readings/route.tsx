@@ -15,7 +15,7 @@ export async function GET(
     );
   }
 
-  const baseUrl = "http://ec2-18-207-156-10.compute-1.amazonaws.com";
+  const baseUrl = process.env.API_BASE_URL;
   const url = `${baseUrl}/weather/${params.code}/readings?start=${start}&end=${end}`;
 
   try {

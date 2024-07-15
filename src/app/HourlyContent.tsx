@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getHourlyWeather } from "@/util/callApi";
 
 interface HourlyContentProps {
   selectedStation: string;
   isLoading: boolean;
   error: string | null;
+  jumpToDate?: Date | string; // Make this prop optional and accept string as well
 }
 
 interface HourlyData {
@@ -21,80 +22,97 @@ export function HourlyContent({
   selectedStation,
   isLoading: initialLoading,
   error: initialError,
+  jumpToDate,
 }: HourlyContentProps) {
   const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
   const [isLoading, setIsLoading] = useState(initialLoading);
   const [error, setError] = useState(initialError);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [hasMore, setHasMore] = useState(true);
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (jumpToDate instanceof Date) {
+      return jumpToDate.toISOString().split("T")[0];
+    } else if (typeof jumpToDate === "string") {
+      return jumpToDate;
+    } else {
+      return new Date().toISOString().split("T")[0]; // Default to today if jumpToDate is not provided
+    }
+  });
+  const [canLoadMore, setCanLoadMore] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(currentDate);
 
   const observer = useRef<IntersectionObserver | null>(null);
+  const lastElementRef = useCallback(
+    (node: HTMLTableRowElement | null) => {
+      if (isLoading) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && canLoadMore) {
+          console.log("Reached the bottom of the scrollable content");
+          loadMoreData();
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, canLoadMore]
+  );
 
-  const loadMoreData = useCallback(async () => {
-    if (!selectedStation || isLoading) return;
+  const loadMoreData = async () => {
+    if (!selectedStation || !canLoadMore) return;
     setIsLoading(true);
-    console.log("triggered");
+    setCanLoadMore(false);
     try {
       const prevDate = new Date(currentDate);
       prevDate.setDate(prevDate.getDate() - 1);
-      const formattedDate = formatDate(prevDate);
-      const newHourlyData = await getHourlyWeather(
+      const formattedPrevDate = prevDate.toISOString().split("T")[0];
+
+      const newData = await getHourlyWeather(
         selectedStation,
-        formattedDate,
-        formattedDate
+        formattedPrevDate,
+        formattedPrevDate
       );
-      if (
-        newHourlyData &&
-        Array.isArray(newHourlyData) &&
-        newHourlyData.length > 0
-      ) {
-        setHourlyData((prevData) => [...prevData, ...newHourlyData]);
-        setCurrentDate(prevDate);
-      }
-      setHasMore(false);
+      setHourlyData((prevData) => [...prevData, ...newData]);
+      setCurrentDate(formattedPrevDate);
+    } catch (err) {
+      setError("Failed to fetch more hourly weather data.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+      setCanLoadMore(true);
+    }
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedDate(e.target.value);
+  };
+
+  const handleJumpToDate = async () => {
+    if (!selectedStation) return;
+    setIsLoading(true);
+    try {
+      const data = await getHourlyWeather(
+        selectedStation,
+        selectedDate,
+        selectedDate
+      );
+      setHourlyData(data);
+      setCurrentDate(selectedDate);
     } catch (err) {
       setError("Failed to fetch hourly weather data.");
       console.error(err);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedStation, currentDate, isLoading]);
-
-  const lastElementRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (isLoading) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading) {
-          loadMoreData();
-        }
-      });
-      if (node) observer.current.observe(node);
-    },
-    [isLoading, hasMore, loadMoreData]
-  );
-  const formatDate = (date: Date) => {
-    const d = new Date(
-      date.toLocaleString("en-US", { timeZone: "America/New_York" })
-    );
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}-${String(d.getDate()).padStart(2, "0")}`;
   };
 
   useEffect(() => {
-    setHourlyData([]);
-    setCurrentDate(new Date());
-    setHasMore(true);
-    setError(null);
-    loadMoreData();
+    handleJumpToDate();
   }, [selectedStation]);
 
   if (!selectedStation) {
     return <div>Please select a station to view hourly weather data.</div>;
   }
-
+  if (isLoading && hourlyData.length === 0) {
+    return <div>Loading...</div>;
+  }
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -103,20 +121,33 @@ export function HourlyContent({
     hourlyData.length > 0
       ? Object.keys(hourlyData[0]).filter(
           (key) =>
-            key !== "station_code" &&
-            key !== "year" &&
-            key !== "day" &&
-            key !== "represented_date" &&
-            key !== "represented_hour"
+            ![
+              "station_code",
+              "year",
+              "day",
+              "represented_date",
+              "represented_hour",
+            ].includes(key)
         )
       : [];
 
   return (
-    <div className="flex flex-col h-full">
-      <h2 className="text-xl font-bold mb-4">
-        Hourly Weather for {selectedStation}
-      </h2>
-      <div className="flex-grow overflow-scroll h-screen">
+    <div className="flex flex-col h-[calc(100vh-250px)]">
+      <div className="flex items-center mb-4">
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={handleDateChange}
+          className="mr-2 p-2 border rounded"
+        />
+        <button
+          onClick={handleJumpToDate}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Jump to Date
+        </button>
+      </div>
+      <div className="flex-grow overflow-scroll">
         <table className="w-full bg-white">
           <thead>
             <tr className="bg-gray-200">
@@ -141,6 +172,7 @@ export function HourlyContent({
               <tr
                 key={`${hour.represented_date}-${hour.represented_hour}-${index}`}
                 className={index % 2 === 0 ? "bg-gray-100" : "bg-white"}
+                ref={index === hourlyData.length - 1 ? lastElementRef : null}
               >
                 <td className="sticky left-0 bg-inherit px-4 py-2">
                   {hour.represented_date}
@@ -157,13 +189,10 @@ export function HourlyContent({
             ))}
           </tbody>
         </table>
+        {isLoading && (
+          <div className="text-center py-4">Loading more data...</div>
+        )}
       </div>
-      <div ref={lastElementRef} className="py-2">
-        {isLoading && "Loading more..."}
-      </div>
-      {!isLoading && !hasMore && (
-        <div className="py-2">No more data to load.</div>
-      )}
     </div>
   );
 }

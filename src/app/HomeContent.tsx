@@ -196,28 +196,36 @@ export function HomeContent({
         </ul>
       </nav>
 
-      <main className="flex-grow p-4 overflow-auto">
+      <main className="p-4 flex-grow">
         {activeTab === "hourly" && (
-          <div className="h-screen">
-            <HourlyContent
-              selectedStation={selectedStation}
-              isLoading={isLoading}
-              error={error}
-            />
-          </div>
-        )}
-        {activeTab === "readings" && <div>Weather Readings Content</div>}
-        {activeTab === "station" && <div>Station Data Content</div>}
-        {activeTab === "debug" && (
-          <DebugContent
+          <HourlyContent
             selectedStation={selectedStation}
             isLoading={isLoading}
             error={error}
-            stationDetails={stationDetails}
-            weatherReadings={weatherReadings}
-            hourlyWeather={hourlyWeather}
-            dailyWeather={dailyWeather}
           />
+        )}
+        {activeTab === "readings" && (
+          <div className="h-[calc(100vh-200px)] overflow-auto">
+            Weather Readings Content
+          </div>
+        )}
+        {activeTab === "station" && (
+          <div className="h-[calc(100vh-200px)] overflow-auto">
+            Station Data Content
+          </div>
+        )}
+        {activeTab === "debug" && (
+          <div className="h-[calc(100vh-200px)] overflow-auto">
+            <DebugContent
+              selectedStation={selectedStation}
+              isLoading={isLoading}
+              error={error}
+              stationDetails={stationDetails}
+              weatherReadings={weatherReadings}
+              hourlyWeather={hourlyWeather}
+              dailyWeather={dailyWeather}
+            />
+          </div>
         )}
       </main>
     </div>

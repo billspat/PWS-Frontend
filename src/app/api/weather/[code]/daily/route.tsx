@@ -11,7 +11,7 @@ export async function GET(
     searchParams.get("end") ||
     new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
-  const baseUrl = "http://ec2-18-207-156-10.compute-1.amazonaws.com";
+  const baseUrl = process.env.API_BASE_URL;
   const url = `${baseUrl}/weather/${params.code}/daily`;
 
   const queryParams = new URLSearchParams({ start, end });
