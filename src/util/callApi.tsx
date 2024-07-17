@@ -151,22 +151,73 @@ export async function getDailyWeather(
   }
 }
 
-export async function getEnviroWeatherToken(): Promise<string | null> {
+// Enviroweather Stuff
+export async function getEnviroWeatherToken(): Promise<string> {
   try {
-    const url = `${getBaseUrl()}/api/enviroweather/token`;
+    const url = `${getBaseUrl()}/api/db2/siteToken`;
     console.log("Fetching EnviroWeather token from:", url);
+
     const response = await fetch(url, {
-      next: { revalidate: 3600 }, // Cache for 1 hour
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
     });
+
     if (!response.ok) {
+      const errorText = await response.text();
       throw new Error(
-        `Failed to fetch EnviroWeather token: ${response.statusText}`
+        `Failed to fetch EnviroWeather token: ${response.status} ${response.statusText}\nResponse: ${errorText}`
       );
     }
+
     const data = await response.json();
+
+    if (!data.token) {
+      throw new Error("Token not found in response");
+    }
+
     return data.token;
   } catch (error) {
     console.error("Failed to fetch EnviroWeather token:", error);
-    return null;
+    throw error;
+  }
+}
+
+export async function getTomcastData(
+  stationCode: string,
+  selectDate: string = new Date().toISOString().split("T")[0],
+  stationType: string = "6",
+  resultModelCode: string = "tomcast",
+  weather: boolean = true
+): Promise<any> {
+  try {
+    const token = await getEnviroWeatherToken();
+
+    const url = `${getBaseUrl()}/api/test?stationCode=${stationCode}&stationType=${stationType}&selectDate=${selectDate}&resultModelCode=${resultModelCode}&weather=${weather}`;
+    console.log("Fetching Tomcast data from:", url);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to fetch Tomcast data: ${response.status} ${response.statusText}\nResponse: ${errorText}`
+      );
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error(
+      `Failed to fetch Tomcast data for station ${stationCode}:`,
+      error
+    );
+    throw error;
   }
 }
