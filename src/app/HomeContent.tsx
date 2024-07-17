@@ -11,6 +11,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { DebugContent } from "./DebugContent";
 import { HourlyContent } from "./HourlyContent";
+import { StationData } from "../types";
 
 interface StationResponse {
   station_codes: string[];
@@ -40,7 +41,9 @@ export function HomeContent({
   const [selectedStation, setSelectedStation] = useState(initialStationCode);
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-  const [stationDetails, setStationDetails] = useState(null);
+  const [stationDetails, setStationDetails] = useState<StationData | null>(
+    null
+  );
   const [weatherReadings, setWeatherReadings] = useState(null);
   const [hourlyWeather, setHourlyWeather] = useState(null);
   const [dailyWeather, setDailyWeather] = useState(null);
