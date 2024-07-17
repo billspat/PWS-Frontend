@@ -1,8 +1,8 @@
-interface StationResponse {
+export interface StationResponse {
   station_codes: string[];
 }
 
-interface StationData {
+export interface StationData {
   id: number;
   station_code: string;
   station_type: string;

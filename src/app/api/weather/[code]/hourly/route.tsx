@@ -33,10 +33,12 @@ export async function GET(
 
     const data = await res.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error("Failed to fetch hourly weather data:", error);
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: "Failed to fetch hourly weather data", details: error.message },
+      {
+        error: "Failed to fetch hourly weather data",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
