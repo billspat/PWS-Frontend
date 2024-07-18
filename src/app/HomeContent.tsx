@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { DebugContent } from "./DebugContent";
 import { HourlyContent } from "./HourlyContent";
 import { StationData } from "../types";
+import { TomCastContent } from "./TomCastContent";
 
 interface StationResponse {
   station_codes: string[];
@@ -184,18 +185,20 @@ export function HomeContent({
 
       <nav className="bg-gray-100 p-2">
         <ul className="flex space-x-4">
-          {["hourly", "readings", "Station Details", "debug"].map((tab) => (
-            <li key={tab}>
-              <button
-                className={`px-3 py-1 rounded ${
-                  activeTab === tab ? "bg-[#18453b] text-white" : "bg-white"
-                }`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            </li>
-          ))}
+          {["hourly", "readings", "Station Details", "debug", "tomcast"].map(
+            (tab) => (
+              <li key={tab}>
+                <button
+                  className={`px-3 py-1 rounded ${
+                    activeTab === tab ? "bg-[#18453b] text-white" : "bg-white"
+                  }`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              </li>
+            )
+          )}
         </ul>
       </nav>
 
@@ -229,6 +232,13 @@ export function HomeContent({
               dailyWeather={dailyWeather}
             />
           </div>
+        )}
+        {activeTab === "tomcast" && (
+          <TomCastContent
+            selectedStation={selectedStation}
+            isLoading={isLoading}
+            error={error}
+          />
         )}
       </main>
     </div>
