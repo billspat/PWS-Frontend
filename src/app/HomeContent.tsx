@@ -55,6 +55,19 @@ export function HomeContent({
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Fetch data when the component mounts
+  useEffect(() => {
+    const stationFromURL = searchParams.get("station") || initialStationCode;
+    const startFromURL = searchParams.get("start") || defaultStart;
+    const endFromURL = searchParams.get("end") || defaultEnd;
+
+    if (stationFromURL) {
+      setSelectedStation(stationFromURL);
+      setSearchTerm(stationFromURL);
+      fetchAllData(stationFromURL, startFromURL, endFromURL);
+    }
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
