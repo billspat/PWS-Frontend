@@ -24,7 +24,9 @@ export function TomCastContent({
           const data = await getTomcastData(selectedStation, today);
           setTomcastData(data);
         } catch (err) {
-          setLocalError(err.message || "Failed to fetch TomCast data");
+          setLocalError(
+            err instanceof Error ? err.message : "Failed to fetch TomCast data"
+          );
         } finally {
           setLocalLoading(false);
         }
