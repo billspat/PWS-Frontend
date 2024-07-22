@@ -60,8 +60,7 @@ export function HourlyContent({
     setIsLoading(true);
     setCanLoadMore(false);
     try {
-      const prevDate = new Date(currentDate);
-      prevDate.setDate(prevDate.getDate() - 1);
+      const prevDate = new Date(currentDate + "T00:00:00-05:00");
       const formattedPrevDate = prevDate.toISOString().split("T")[0];
 
       const newData = await getHourlyWeather(

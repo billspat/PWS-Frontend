@@ -19,7 +19,10 @@ interface StationResponse {
 }
 
 function formatDateYYYYMMDD(date: Date): string {
-  return date.toISOString().split("T")[0];
+  const estDate = new Date(
+    date.toLocaleString("en-US", { timeZone: "America/New_York" })
+  );
+  return estDate.toISOString().split("T")[0];
 }
 
 export function HomeContent({
