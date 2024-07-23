@@ -83,24 +83,44 @@ export function HourlyContent({
     setSelectedDate(e.target.value);
   };
 
-  const handleJumpToDate = async () => {
-    if (!selectedStation) return;
-    setIsLoading(true);
-    try {
-      const data = await getHourlyWeather(
-        selectedStation,
-        selectedDate,
-        selectedDate
-      );
-      setHourlyData(data);
-      setCurrentDate(selectedDate);
-    } catch (err) {
-      setError("Failed to fetch hourly weather data.");
-      console.error(err);
-    } finally {
+  const loadDataForDate = async (date: string, retryCount = 0) => {
+    if (retryCount > 3) {
+      setError("Failed to fetch hourly weather data after multiple attempts.");
       setIsLoading(false);
+      return;
+    }
+
+    try {
+      const data = await getHourlyWeather(selectedStation, date, date);
+      if (data.length > 0) {
+        setHourlyData(data);
+        setCurrentDate(date);
+        setIsLoading(false);
+        setError(null);
+      } else {
+        throw new Error("No data available for the selected date.");
+      }
+    } catch (err) {
+      console.error(`Attempt ${retryCount + 1} failed for date ${date}:`, err);
+      const prevDate = new Date(date);
+      prevDate.setDate(prevDate.getDate() - 1);
+      const formattedPrevDate = prevDate.toISOString().split("T")[0];
+      loadDataForDate(formattedPrevDate, retryCount + 1);
     }
   };
+
+  const handleJumpToDate = () => {
+    if (!selectedStation) return;
+    setIsLoading(true);
+    loadDataForDate(selectedDate);
+  };
+
+  useEffect(() => {
+    if (selectedStation) {
+      setIsLoading(true);
+      loadDataForDate(currentDate);
+    }
+  }, [selectedStation]);
 
   useEffect(() => {
     handleJumpToDate();
