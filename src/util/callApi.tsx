@@ -8,7 +8,7 @@ const getBaseUrl = () => {
 
 export async function getInitialStations(): Promise<StationResponse> {
   try {
-    const response = await fetch(`${getBaseUrl()}/api/stations`, {
+    const response = await fetch(`${getBaseUrl()}/api/pws/stations`, {
       next: { revalidate: 3600 },
     });
     if (!response.ok) {
@@ -26,7 +26,7 @@ export async function getStationData(
 ): Promise<StationData | null> {
   try {
     const response = await fetch(
-      `${getBaseUrl()}/api/stations/${stationCode}`,
+      `${getBaseUrl()}/api/pws/stations/${stationCode}`,
       {
         next: { revalidate: 3600 },
       }
@@ -52,7 +52,7 @@ export async function getWeatherData(
   end: string
 ): Promise<any> {
   try {
-    const url = `${getBaseUrl()}/api/weather/${stationCode}/api?start=${start}&end=${end}`;
+    const url = `${getBaseUrl()}/api/pws/weather/${stationCode}/api?start=${start}&end=${end}`;
     console.log("Fetching weather data from:", url);
     const response = await fetch(url, { next: { revalidate: 60 } });
     if (!response.ok) {
@@ -74,7 +74,7 @@ export async function getWeatherReadings(
   end: string
 ): Promise<any> {
   try {
-    const url = `${getBaseUrl()}/api/weather/${stationCode}/readings?start=${start}&end=${end}`;
+    const url = `${getBaseUrl()}/api/pws/weather/${stationCode}/readings?start=${start}&end=${end}`;
     console.log("Fetching weather readings from:", url);
     const response = await fetch(url, {
       method: "GET",
@@ -104,7 +104,7 @@ export async function getHourlyWeather(
   end: string = start
 ): Promise<any> {
   try {
-    const url = `${getBaseUrl()}/api/weather/${stationCode}/hourly?start=${start}&end=${end}`;
+    const url = `${getBaseUrl()}/api/pws/weather/${stationCode}/hourly?start=${start}&end=${end}`;
     console.log("Fetching hourly weather data from:", url);
     const response = await fetch(url, {
       headers: {
@@ -133,7 +133,7 @@ export async function getDailyWeather(
   end: string = new Date(Date.now() + 86400000).toISOString().split("T")[0]
 ): Promise<any> {
   try {
-    const url = `${getBaseUrl()}/api/weather/${stationCode}/daily?start=${start}&end=${end}`;
+    const url = `${getBaseUrl()}/api/pws/weather/${stationCode}/daily?start=${start}&end=${end}`;
     console.log("Fetching daily weather data from:", url);
     const response = await fetch(url, { next: { revalidate: 60 } });
     if (!response.ok) {
@@ -154,7 +154,7 @@ export async function getDailyWeather(
 // Enviroweather Stuff
 export async function getEnviroWeatherToken(): Promise<string> {
   try {
-    const url = `${getBaseUrl()}/api/db2/siteToken`;
+    const url = `${getBaseUrl()}/api/evrwt/siteToken`;
     console.log("Fetching EnviroWeather token from:", url);
 
     const response = await fetch(url, {
