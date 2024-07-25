@@ -1,7 +1,6 @@
 "use client";
-
 import { useEffect, useState, useRef } from "react";
-import { FaChevronDown } from "react-icons/fa";
+import { FaChevronDown, FaBars } from "react-icons/fa";
 import {
   getStationData,
   getWeatherReadings,
@@ -54,16 +53,16 @@ export function HomeContent({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("hourly");
-
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Fetch data when the component mounts
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef(null);
+
   useEffect(() => {
     const stationFromURL = searchParams.get("station") || initialStationCode;
     const startFromURL = searchParams.get("start") || defaultStart;
     const endFromURL = searchParams.get("end") || defaultEnd;
-
     if (stationFromURL) {
       setSelectedStation(stationFromURL);
       setSearchTerm(stationFromURL);
@@ -95,6 +94,22 @@ export function HomeContent({
     }
   }, [searchParams, initialStationCode, defaultStart, defaultEnd]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target)
+      ) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const fetchAllData = async (
     stationCode: string,
     start: string,
@@ -122,6 +137,7 @@ export function HomeContent({
         getHourlyWeather(stationCode, startYMD, endYMD),
         getDailyWeather(stationCode, startYMD, endYMD),
       ]);
+
       setStationDetails(newStationDetails);
       setWeatherReadings(newWeatherReadings);
       setHourlyWeather(newHourlyWeather);
@@ -150,11 +166,34 @@ export function HomeContent({
     }
   };
 
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
   const filteredStations = selectedStation
     ? stationCodes
     : stationCodes.filter((code) =>
         code.toLowerCase().includes(searchTerm.toLowerCase())
       );
+
+  const renderNavItems = (mobile = false) =>
+    ["hourly", "readings", "Station Details", "debug", "tomcast"].map((tab) => (
+      <li key={tab} className={mobile ? "mb-2" : ""}>
+        <button
+          className={`px-3 py-1 rounded ${
+            activeTab === tab
+              ? "bg-[#18453b] text-white"
+              : "bg-white text-black"
+          }`}
+          onClick={() => {
+            setActiveTab(tab);
+            if (mobile) setMobileMenuOpen(false);
+          }}
+        >
+          {tab.charAt(0).toUpperCase() + tab.slice(1)}
+        </button>
+      </li>
+    ));
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -193,30 +232,32 @@ export function HomeContent({
         </div>
       </header>
 
-      <div className="bg-[#2c7d64] text-white p-2">
+      <div className="bg-[#2c7d64] text-white p-2 flex items-center">
+        <button className="mr-2 text-2xl md:hidden" onClick={toggleMobileMenu}>
+          <FaBars />
+        </button>
         <h2 className="text-4xl font-semibold">
           {selectedStation || "No station selected"}
         </h2>
       </div>
 
-      <nav className="bg-gray-100 p-2">
-        <ul className="flex space-x-4">
-          {["hourly", "readings", "Station Details", "debug", "tomcast"].map(
-            (tab) => (
-              <li key={tab}>
-                <button
-                  className={`px-3 py-1 rounded ${
-                    activeTab === tab ? "bg-[#18453b] text-white" : "bg-white"
-                  }`}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              </li>
-            )
-          )}
-        </ul>
+      <nav className="bg-gray-100 p-2 hidden md:block">
+        <ul className="flex space-x-4">{renderNavItems()}</ul>
       </nav>
+
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 z-50 md:hidden">
+          <div ref={mobileMenuRef} className="bg-white h-full w-64 p-4">
+            <button
+              className="text-2xl mb-4"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              &times;
+            </button>
+            <ul>{renderNavItems(true)}</ul>
+          </div>
+        </div>
+      )}
 
       <main className="p-4 flex-grow">
         {activeTab === "hourly" && (
