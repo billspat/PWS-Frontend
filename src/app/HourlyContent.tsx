@@ -166,22 +166,19 @@ export function HourlyContent({
           Jump to Date
         </button>
       </div>
-      <div className="flex-grow overflow-scroll">
-        <table className="w-full bg-white">
+      <div className="flex-grow overflow-auto">
+        <table className="w-full bg-white border-collapse border-spacing-0">
           <thead>
             <tr className="bg-gray-200">
-              <th className="sticky top-0 left-0 z-10 bg-gray-200 px-4 py-2">
-                Date
+              <th className="sticky top-0 left-0 z-10 bg-gray-200 p-0">
+                <div className="px-4 py-2 w-[100px]">Date</div>
               </th>
-              <th className="sticky top-0 left-[100px] z-10 bg-gray-200 px-4 py-2">
-                Hour
+              <th className="sticky top-0 left-[100px] z-10 bg-gray-200 p-0">
+                <div className="px-4 py-2 w-[80px]">Hour</div>
               </th>
               {dataKeys.map((key) => (
-                <th
-                  key={key}
-                  className="sticky top-0 z-10 bg-gray-200 px-4 py-2"
-                >
-                  {key}
+                <th key={key} className="sticky top-0 z-8 bg-gray-200 p-0">
+                  <div className="px-4 py-2">{key}</div>
                 </th>
               ))}
             </tr>
@@ -193,15 +190,19 @@ export function HourlyContent({
                 className={index % 2 === 0 ? "bg-gray-100" : "bg-white"}
                 ref={index === hourlyData.length - 1 ? lastElementRef : null}
               >
-                <td className="sticky left-0 bg-inherit px-4 py-2">
-                  {hour.represented_date}
+                <td className="sticky left-0 bg-inherit p-0">
+                  <div className="px-4 py-2 w-[100px]">
+                    {hour.represented_date}
+                  </div>
                 </td>
-                <td className="sticky left-[100px] bg-inherit px-4 py-2">
-                  {hour.represented_hour}
+                <td className="sticky left-[100px] bg-inherit p-0">
+                  <div className="px-4 py-2 w-[80px]">
+                    {hour.represented_hour}
+                  </div>
                 </td>
                 {dataKeys.map((key) => (
-                  <td key={`${key}-${index}`} className="px-4 py-2">
-                    {hour[key]}
+                  <td key={`${key}-${index}`} className="p-0">
+                    <div className="px-4 py-2">{hour[key]}</div>
                   </td>
                 ))}
               </tr>
