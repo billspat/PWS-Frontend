@@ -15,6 +15,8 @@ interface HourlyData {
   represented_date: string;
   represented_hour: number;
   record_count: number;
+  formatted_date: string;
+  formatted_time: string;
   [key: string]: number | string;
 }
 
@@ -39,6 +41,46 @@ export function HourlyContent({
   const [canLoadMore, setCanLoadMore] = useState(true);
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const observer = useRef<IntersectionObserver | null>(null);
+
+  const formatDate = (date: string) => {
+    const dateObj = new Date(date);
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const month = monthNames[dateObj.getMonth()];
+    const day = dateObj.getDate().toString().padStart(2, "0");
+    return `${month} ${day}`;
+  };
+
+  const formatTime = (hour: number) => {
+    const endHour = hour === 24 ? 12 : hour % 12 || 12;
+    const startHour = hour === 1 ? 12 : (hour - 1) % 12 || 12;
+    const endAmPm = hour < 12 || hour === 24 ? "AM" : "PM";
+    const startAmPm = hour - 1 < 12 && hour !== 24 ? "AM" : "PM";
+    return `${endHour}${endAmPm} - ${startHour}${startAmPm}`;
+  };
+
+  const formatAndSortData = (data: HourlyData[]) => {
+    const sortedData = data.sort(
+      (a, b) => b.represented_hour - a.represented_hour
+    );
+    return sortedData.map((item, index) => ({
+      ...item,
+      formatted_date: index === 0 ? formatDate(item.represented_date) : "",
+      formatted_time: formatTime(item.represented_hour),
+    }));
+  };
 
   const lastElementRef = useCallback(
     (node: HTMLTableRowElement | null) => {
@@ -68,7 +110,8 @@ export function HourlyContent({
         formattedPrevDate,
         formattedPrevDate
       );
-      setHourlyData((prevData) => [...prevData, ...newData]);
+      const formattedAndSortedNewData = formatAndSortData(newData);
+      setHourlyData((prevData) => [...prevData, ...formattedAndSortedNewData]);
       setCurrentDate(formattedPrevDate);
     } catch (err) {
       setError("Failed to fetch more hourly weather data.");
@@ -89,11 +132,11 @@ export function HourlyContent({
       setIsLoading(false);
       return;
     }
-
     try {
       const data = await getHourlyWeather(selectedStation, date, date);
       if (data.length > 0) {
-        setHourlyData(data);
+        const formattedAndSortedData = formatAndSortData(data);
+        setHourlyData(formattedAndSortedData);
         setCurrentDate(date);
         setIsLoading(false);
         setError(null);
@@ -147,6 +190,8 @@ export function HourlyContent({
               "day",
               "represented_date",
               "represented_hour",
+              "formatted_date",
+              "formatted_time",
             ].includes(key)
         )
       : [];
@@ -172,10 +217,10 @@ export function HourlyContent({
           <thead>
             <tr className="bg-gray-200">
               <th className="sticky top-0 left-0 z-10 bg-gray-200 p-0">
-                <div className="px-4 py-2 w-[100px]">Date</div>
+                <div className="px-4 py-2 w-[150px]">Date</div>
               </th>
-              <th className="sticky top-0 left-[100px] z-10 bg-gray-200 p-0">
-                <div className="px-4 py-2 w-[80px]">Hour</div>
+              <th className="sticky top-0 left-[150px] z-10 bg-gray-200 p-0">
+                <div className="px-4 py-2 w-[150px]">Time</div>
               </th>
               {dataKeys.map((key) => (
                 <th key={key} className="sticky top-0 z-8 bg-gray-200 p-0">
@@ -192,13 +237,13 @@ export function HourlyContent({
                 ref={index === hourlyData.length - 1 ? lastElementRef : null}
               >
                 <td className="sticky left-0 bg-inherit p-0">
-                  <div className="px-4 py-2 w-[100px]">
-                    {hour.represented_date}
+                  <div className="px-4 py-2 w-[150px]">
+                    {hour.formatted_date}
                   </div>
                 </td>
-                <td className="sticky left-[100px] bg-inherit p-0">
-                  <div className="px-4 py-2 w-[80px]">
-                    {hour.represented_hour}
+                <td className="sticky left-[150px] bg-inherit p-0">
+                  <div className="px-4 py-2 w-[150px]">
+                    {hour.formatted_time}
                   </div>
                 </td>
                 {dataKeys.map((key) => (

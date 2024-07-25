@@ -218,7 +218,7 @@ export function HomeContent({
             </button>
           </div>
           {showDropdown && (
-            <div className="absolute top-full left-0 bg-white text-black mt-1 w-full max-h-60 overflow-y-auto rounded shadow">
+            <div className="absolute top-full left-0 bg-white text-black mt-1 w-full max-h-60 overflow-y-auto rounded shadow z-20">
               {filteredStations.map((code) => (
                 <div
                   key={code}
