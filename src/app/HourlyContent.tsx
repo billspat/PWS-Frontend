@@ -5,7 +5,7 @@ interface HourlyContentProps {
   selectedStation: string;
   isLoading: boolean;
   error: string | null;
-  jumpToDate?: Date | string; // Make this prop optional and accept string as well
+  jumpToDate?: Date | string;
 }
 
 interface HourlyData {
@@ -33,13 +33,13 @@ export function HourlyContent({
     } else if (typeof jumpToDate === "string") {
       return jumpToDate;
     } else {
-      return new Date().toISOString().split("T")[0]; // Default to today if jumpToDate is not provided
+      return new Date().toISOString().split("T")[0];
     }
   });
   const [canLoadMore, setCanLoadMore] = useState(true);
   const [selectedDate, setSelectedDate] = useState(currentDate);
-
   const observer = useRef<IntersectionObserver | null>(null);
+
   const lastElementRef = useCallback(
     (node: HTMLTableRowElement | null) => {
       if (isLoading) return;
@@ -61,8 +61,8 @@ export function HourlyContent({
     setCanLoadMore(false);
     try {
       const prevDate = new Date(currentDate + "T00:00:00-05:00");
+      prevDate.setDate(prevDate.getDate() - 1);
       const formattedPrevDate = prevDate.toISOString().split("T")[0];
-
       const newData = await getHourlyWeather(
         selectedStation,
         formattedPrevDate,
@@ -105,33 +105,34 @@ export function HourlyContent({
       const prevDate = new Date(date);
       prevDate.setDate(prevDate.getDate() - 1);
       const formattedPrevDate = prevDate.toISOString().split("T")[0];
-      loadDataForDate(formattedPrevDate, retryCount + 1);
+      console.log(`Retrying with previous date: ${formattedPrevDate}`);
+      await loadDataForDate(formattedPrevDate, retryCount + 1);
     }
   };
 
   const handleJumpToDate = () => {
     if (!selectedStation) return;
     setIsLoading(true);
+    setError(null);
     loadDataForDate(selectedDate);
   };
 
   useEffect(() => {
     if (selectedStation) {
       setIsLoading(true);
+      setError(null);
       loadDataForDate(currentDate);
     }
-  }, [selectedStation]);
-
-  useEffect(() => {
-    handleJumpToDate();
   }, [selectedStation]);
 
   if (!selectedStation) {
     return <div>Please select a station to view hourly weather data.</div>;
   }
+
   if (isLoading && hourlyData.length === 0) {
     return <div>Loading...</div>;
   }
+
   if (error) {
     return <div>Error: {error}</div>;
   }

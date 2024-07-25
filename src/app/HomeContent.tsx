@@ -57,8 +57,7 @@ export function HomeContent({
   const searchParams = useSearchParams();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const mobileMenuRef = useRef(null);
-
+  const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const stationFromURL = searchParams.get("station") || initialStationCode;
     const startFromURL = searchParams.get("start") || defaultStart;
@@ -95,9 +94,10 @@ export function HomeContent({
   }, [searchParams, initialStationCode, defaultStart, defaultEnd]);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         mobileMenuRef.current &&
+        event.target instanceof Node &&
         !mobileMenuRef.current.contains(event.target)
       ) {
         setMobileMenuOpen(false);
@@ -105,6 +105,7 @@ export function HomeContent({
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
