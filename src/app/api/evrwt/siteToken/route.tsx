@@ -36,9 +36,15 @@ export async function GET() {
     try {
       tokenData = JSON.parse(responseText);
     } catch (parseError) {
-      throw new Error(
-        `Failed to parse token response: ${parseError.message}\nResponse: ${responseText}`
-      );
+      if (parseError instanceof Error) {
+        throw new Error(
+          `Failed to parse token response: ${parseError.message}\nResponse: ${responseText}`
+        );
+      } else {
+        throw new Error(
+          `Failed to parse token response: Unknown error\nResponse: ${responseText}`
+        );
+      }
     }
 
     if (!tokenData.data || !tokenData.data.token) {
@@ -51,7 +57,11 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching site token:", error);
     return NextResponse.json(
-      { error: `Failed to fetch EnviroWeather token: ${error.message}` },
+      {
+        error: `Failed to fetch EnviroWeather token: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      },
       { status: 500 }
     );
   }
