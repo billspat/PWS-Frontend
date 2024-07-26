@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getHourlyWeather } from "@/util/callApi";
+import { Graph } from "./Graph";
 
 interface HourlyContentProps {
   selectedStation: string;
@@ -40,6 +41,7 @@ export function HourlyContent({
   });
   const [canLoadMore, setCanLoadMore] = useState(true);
   const [selectedDate, setSelectedDate] = useState(currentDate);
+  const [activeTab, setActiveTab] = useState("table");
   const observer = useRef<IntersectionObserver | null>(null);
 
   const formatDate = (date: string) => {
@@ -168,50 +170,24 @@ export function HourlyContent({
     }
   }, [selectedStation]);
 
-  if (!selectedStation) {
-    return <div>Please select a station to view hourly weather data.</div>;
-  }
+  const renderTableView = () => {
+    const dataKeys =
+      hourlyData.length > 0
+        ? Object.keys(hourlyData[0]).filter(
+            (key) =>
+              ![
+                "station_code",
+                "year",
+                "day",
+                "represented_date",
+                "represented_hour",
+                "formatted_date",
+                "formatted_time",
+              ].includes(key)
+          )
+        : [];
 
-  if (isLoading && hourlyData.length === 0) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  const dataKeys =
-    hourlyData.length > 0
-      ? Object.keys(hourlyData[0]).filter(
-          (key) =>
-            ![
-              "station_code",
-              "year",
-              "day",
-              "represented_date",
-              "represented_hour",
-              "formatted_date",
-              "formatted_time",
-            ].includes(key)
-        )
-      : [];
-
-  return (
-    <div className="flex flex-col h-[calc(100vh-250px)]">
-      <div className="flex items-center mb-4">
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={handleDateChange}
-          className="mr-2 p-2 border rounded"
-        />
-        <button
-          onClick={handleJumpToDate}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Jump to Date
-        </button>
-      </div>
+    return (
       <div className="flex-grow overflow-auto">
         <table className="w-full bg-white border-collapse border-spacing-0">
           <thead>
@@ -259,6 +235,63 @@ export function HourlyContent({
           <div className="text-center py-4">Loading more data...</div>
         )}
       </div>
+    );
+  };
+
+  const renderGraphView = () => {
+    const graphData = hourlyData
+      .map((hour) => ({
+        hour: hour.represented_hour,
+        temperature: parseFloat(hour.temperature as string),
+      }))
+      .sort((a, b) => a.hour - b.hour);
+
+    return (
+      <div className="flex-grow overflow-auto">
+        <Graph data={graphData} />
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-250px)]">
+      <div className="flex items-center mb-4">
+        <div className="flex mr-4">
+          <button
+            onClick={() => setActiveTab("table")}
+            className={`px-4 py-2 rounded-l ${
+              activeTab === "table"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-700"
+            }`}
+          >
+            Table
+          </button>
+          <button
+            onClick={() => setActiveTab("graph")}
+            className={`px-4 py-2 rounded-r ${
+              activeTab === "graph"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-700"
+            }`}
+          >
+            Graph
+          </button>
+        </div>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={handleDateChange}
+          className="mr-2 p-2 border rounded"
+        />
+        <button
+          onClick={handleJumpToDate}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Jump to Date
+        </button>
+      </div>
+      {activeTab === "table" ? renderTableView() : renderGraphView()}
     </div>
   );
 }
