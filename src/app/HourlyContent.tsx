@@ -28,6 +28,7 @@ export function HourlyContent({
   jumpToDate,
 }: HourlyContentProps) {
   const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
+  const [graphData, setGraphData] = useState<HourlyData[]>([]);
   const [isLoading, setIsLoading] = useState(initialLoading);
   const [error, setError] = useState(initialError);
   const [currentDate, setCurrentDate] = useState(() => {
@@ -139,6 +140,8 @@ export function HourlyContent({
       if (data.length > 0) {
         const formattedAndSortedData = formatAndSortData(data);
         setHourlyData(formattedAndSortedData);
+        setGraphData(data);
+
         setCurrentDate(date);
         setIsLoading(false);
         setError(null);
@@ -239,16 +242,20 @@ export function HourlyContent({
   };
 
   const renderGraphView = () => {
-    const graphData = hourlyData
-      .map((hour) => ({
-        hour: hour.represented_hour,
-        temperature: parseFloat(hour.temperature as string),
-      }))
-      .sort((a, b) => a.hour - b.hour);
+    const processedGraphData = graphData.map((hour) => ({
+      hour: hour.represented_hour,
+      atmp_avg_hourly: parseFloat(hour.atmp_avg_hourly as string),
+    }));
 
     return (
       <div className="flex-grow overflow-auto">
-        <Graph data={graphData} />
+        <Graph
+          data={processedGraphData}
+          xAxis="hour"
+          yAxis="atmp_avg_hourly"
+          xLabel="Hour"
+          yLabel="Atmosphere Avg"
+        />
       </div>
     );
   };

@@ -1,11 +1,19 @@
 import React from "react";
 
-interface GraphProps {
-  data: { hour: number; temperature: number }[];
+interface DataPoint {
+  [key: string]: number;
 }
 
-export function Graph({ data }: GraphProps) {
-  console.log("Graph data:", data); // Log the entire data array
+interface GraphProps {
+  data: DataPoint[];
+  xAxis: string;
+  yAxis: string;
+  xLabel: string;
+  yLabel: string;
+}
+
+export function Graph({ data, xAxis, yAxis, xLabel, yLabel }: GraphProps) {
+  console.log("Graph data:", data);
 
   const svgWidth = 800;
   const svgHeight = 400;
@@ -13,47 +21,61 @@ export function Graph({ data }: GraphProps) {
   const width = svgWidth - margin.left - margin.right;
   const height = svgHeight - margin.top - margin.bottom;
 
-  const xScale = (hour: number) => (hour / 24) * width;
-  const yScale = (temp: number) =>
-    height - ((temp - minTemp) / (maxTemp - minTemp)) * height;
+  const xValues = data.map((d) => d[xAxis]);
+  const yValues = data.map((d) => d[yAxis]);
 
-  const minTemp = Math.min(...data.map((d) => d.temperature));
-  const maxTemp = Math.max(...data.map((d) => d.temperature));
+  const xMin = Math.min(...xValues);
+  const xMax = Math.max(...xValues);
+  const yMin = Math.min(...yValues);
+  const yMax = Math.max(...yValues);
 
-  console.log("Min temperature:", minTemp); // Log min temperature
-  console.log("Max temperature:", maxTemp); // Log max temperature
+  console.log(`X range: ${xMin} to ${xMax}`);
+  console.log(`Y range: ${yMin} to ${yMax}`);
+
+  const xScale = (value: number) => ((value - xMin) / (xMax - xMin)) * width;
+  const yScale = (value: number) =>
+    height - ((value - yMin) / (yMax - yMin)) * height;
 
   return (
     <svg width={svgWidth} height={svgHeight}>
       <g transform={`translate(${margin.left},${margin.top})`}>
         {/* X-axis */}
         <line x1={0} y1={height} x2={width} y2={height} stroke="black" />
-        {[0, 6, 12, 18, 24].map((hour) => (
-          <text key={hour} x={xScale(hour)} y={height + 20} textAnchor="middle">
-            {hour}:00
+        {[xMin, (xMin + xMax) / 2, xMax].map((value, i) => (
+          <text key={i} x={xScale(value)} y={height + 20} textAnchor="middle">
+            {value.toFixed(1)}
           </text>
         ))}
+        <text x={width / 2} y={height + 40} textAnchor="middle">
+          {xLabel}
+        </text>
 
         {/* Y-axis */}
         <line x1={0} y1={0} x2={0} y2={height} stroke="black" />
-        {[minTemp, (minTemp + maxTemp) / 2, maxTemp].map((temp, i) => (
+        {[yMin, (yMin + yMax) / 2, yMax].map((value, i) => (
           <text
             key={i}
             x={-10}
-            y={yScale(temp)}
+            y={yScale(value)}
             textAnchor="end"
             dominantBaseline="middle"
           >
-            {temp.toFixed(1)}°C
+            {value.toFixed(1)}
           </text>
         ))}
+        <text
+          transform={`rotate(-90) translate(-${height / 2}, -30)`}
+          textAnchor="middle"
+        >
+          {yLabel}
+        </text>
 
-        {/* Temperature line */}
+        {/* Data line */}
         <path
           d={`M${data
             .map((d) => {
-              console.log(`Point: (${d.hour}, ${d.temperature})`); // Log each point
-              return `${xScale(d.hour)},${yScale(d.temperature)}`;
+              console.log(`Point: (${d[xAxis]}, ${d[yAxis]})`);
+              return `${xScale(d[xAxis])},${yScale(d[yAxis])}`;
             })
             .join(" L")}`}
           fill="none"
@@ -65,8 +87,8 @@ export function Graph({ data }: GraphProps) {
         {data.map((d, i) => (
           <circle
             key={i}
-            cx={xScale(d.hour)}
-            cy={yScale(d.temperature)}
+            cx={xScale(d[xAxis])}
+            cy={yScale(d[yAxis])}
             r="4"
             fill="blue"
           />
