@@ -12,6 +12,7 @@ import { DebugContent } from "./DebugContent";
 import { HourlyContent } from "./HourlyContent";
 import { StationData } from "../types";
 import { TomCastContent } from "./TomCastContent";
+import Map from "./components/Map"; // Import the Map component
 
 interface StationResponse {
   station_codes: string[];
@@ -233,72 +234,79 @@ export function HomeContent({
         </div>
       </header>
 
-      <div className="bg-[#2c7d64] text-white p-2 flex items-center">
-        <button className="mr-2 text-2xl md:hidden" onClick={toggleMobileMenu}>
-          <FaBars />
-        </button>
-        <h2 className="text-4xl font-semibold">
-          {selectedStation || "No station selected"}
-        </h2>
-      </div>
-
-      <nav className="bg-gray-100 p-2 hidden md:block">
-        <ul className="flex space-x-4">{renderNavItems()}</ul>
-      </nav>
-
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 z-50 md:hidden">
-          <div ref={mobileMenuRef} className="bg-white h-full w-64 p-4">
+      {selectedStation ? (
+        <>
+          <div className="bg-[#2c7d64] text-white p-2 flex items-center">
             <button
-              className="text-2xl mb-4"
-              onClick={() => setMobileMenuOpen(false)}
+              className="mr-2 text-2xl md:hidden"
+              onClick={toggleMobileMenu}
             >
-              &times;
+              <FaBars />
             </button>
-            <ul>{renderNavItems(true)}</ul>
+            <h2 className="text-4xl font-semibold">
+              {selectedStation || "No station selected"}
+            </h2>
           </div>
-        </div>
-      )}
+          <nav className="bg-gray-100 p-2 hidden md:block">
+            <ul className="flex space-x-4">{renderNavItems()}</ul>
+          </nav>
+          {mobileMenuOpen && (
+            <div className="fixed inset-0 bg-gray-800 bg-opacity-75 z-50 md:hidden">
+              <div ref={mobileMenuRef} className="bg-white h-full w-64 p-4">
+                <button
+                  className="text-2xl mb-4"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  &times;
+                </button>
+                <ul>{renderNavItems(true)}</ul>
+              </div>
+            </div>
+          )}
 
-      <main className="p-4 flex-grow">
-        {activeTab === "hourly" && (
-          <HourlyContent
-            selectedStation={selectedStation}
-            isLoading={isLoading}
-            error={error}
-          />
-        )}
-        {activeTab === "readings" && (
-          <div className="h-[calc(100vh-200px)] overflow-auto">
-            Weather Readings Content
-          </div>
-        )}
-        {activeTab === "station" && (
-          <div className="h-[calc(100vh-200px)] overflow-auto">
-            Station Data Content
-          </div>
-        )}
-        {activeTab === "debug" && (
-          <div className="h-[calc(100vh-200px)] overflow-auto">
-            <DebugContent
-              selectedStation={selectedStation}
-              isLoading={isLoading}
-              error={error}
-              stationDetails={stationDetails}
-              weatherReadings={weatherReadings}
-              hourlyWeather={hourlyWeather}
-              dailyWeather={dailyWeather}
-            />
-          </div>
-        )}
-        {activeTab === "tomcast" && (
-          <TomCastContent
-            selectedStation={selectedStation}
-            isLoading={isLoading}
-            error={error}
-          />
-        )}
-      </main>
+          <main className="p-4 flex-grow">
+            {activeTab === "hourly" && (
+              <HourlyContent
+                selectedStation={selectedStation}
+                isLoading={isLoading}
+                error={error}
+              />
+            )}
+            {activeTab === "readings" && (
+              <div className="h-[calc(100vh-200px)] overflow-auto">
+                Weather Readings Content
+              </div>
+            )}
+            {activeTab === "station" && (
+              <div className="h-[calc(100vh-200px)] overflow-auto">
+                Station Data Content
+              </div>
+            )}
+            {activeTab === "debug" && (
+              <div className="h-[calc(100vh-200px)] overflow-auto">
+                <DebugContent
+                  selectedStation={selectedStation}
+                  isLoading={isLoading}
+                  error={error}
+                  stationDetails={stationDetails}
+                  weatherReadings={weatherReadings}
+                  hourlyWeather={hourlyWeather}
+                  dailyWeather={dailyWeather}
+                />
+              </div>
+            )}
+            {activeTab === "tomcast" && (
+              <TomCastContent
+                selectedStation={selectedStation}
+                isLoading={isLoading}
+                error={error}
+              />
+            )}
+          </main>
+        </>
+      ) : (
+        <Map center={[-96, 37.8]} zoom={3} />
+      )}
     </div>
   );
 }
