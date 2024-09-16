@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Remove default padding from the popup */
+.mapboxgl-popup.custom-popup {
+  padding: 0;
+}
+
+/* Customize the popup content */
+.mapboxgl-popup.custom-popup .mapboxgl-popup-content {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
