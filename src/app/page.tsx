@@ -1,5 +1,3 @@
-// app/page.tsx
-
 import { HomeContent } from "./HomeContent";
 import { getInitialStations } from "@/util/callApi";
 

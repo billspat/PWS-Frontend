@@ -8,7 +8,20 @@ First, install dependencies
 npm run dev
 ```
 
-Make a file named .env.local in project root. Then, msg a trusted member for file contents.
+Make a file named .env.local in project root.
+
+Insert text below, replacing values of your own.
+
+```bash
+#Url for the PWS API hosted on amazon ec2
+API_BASE_URL=
+#Url for enviroweather apis deployed on prod
+ENVIROWEATHER_API_URL=
+#Url for enviroweather apis deployed on test
+TEST_API_URL=
+#Mapbox access token, Remove and replace map with splash to select station if map is not desired
+NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=
+```
 
 Then, run the development server:
 
