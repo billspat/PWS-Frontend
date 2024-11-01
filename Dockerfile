@@ -11,7 +11,6 @@ FROM base AS dependencies
 
 COPY package.json package-lock.json ./
 RUN npm install
-RUN npm ci
 
 ########## Build
 FROM base AS build
