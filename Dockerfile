@@ -1,66 +1,45 @@
-FROM node:20-alpine AS base
+FROM node:22-slim AS base
 
+ARG PORT=3000
 
-
-### Dependencies ###
-FROM base AS deps
-RUN apk add --no-cache libc6-compat git
-
-
-
-# Setup pnpm environment
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
-RUN corepack prepare pnpm@latest --activate
+ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prefer-frozen-lockfile
+########### Dependencies
+FROM base AS dependencies
 
-# Builder
-FROM base AS builder
+COPY package.json package-lock.json ./
+RUN npm install
+RUN npm ci
 
-RUN corepack enable
-RUN corepack prepare pnpm@latest --activate
+########## Build
+FROM base AS build
 
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
-RUN pnpm build
 
+RUN npm run build
 
-### Production image runner ###
-FROM base AS runner
+########## Run
+FROM base AS run
 
-# Set NODE_ENV to production
-ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+ENV PORT=$PORT
 
-# Disable Next.js telemetry
-# Learn more here: https://nextjs.org/telemetry
-ENV NEXT_TELEMETRY_DISABLED 1
-
-# Set correct permissions for nextjs user and don't run as root
-RUN addgroup nodejs
-RUN adduser -SDH nextjs
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=build /app/public ./public
+COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
-# Exposed port (for orchestrators and dynamic reverse proxies)
-EXPOSE 3000
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "wget", "-q0", "http://localhost:3000/health" ]
+EXPOSE $PORT
 
-# Run the nextjs app
+ENV HOSTNAME="0.0.0.0"
 CMD ["node", "server.js"]
