@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
   try {
     const token = await getEnviroWeatherToken();
-    const apiUrl = `${process.env.TEST_API_URL}/tma/ewx/rm-api/api/db2/run`;
+    const apiUrl = `${process.env.TEST_API_URL}/rm-api/api/db2/run`;
     const fullUrl = `${apiUrl}?stationCode=${stationCode}&stationType=${stationType}&selectDate=${selectDate}&resultModelCode=${resultModelCode}${
       dateStartAccumulation
         ? `&dateStartAccumulation=${dateStartAccumulation}`
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching data:", error);
-    const apiUrl = `${process.env.TEST_API_URL}/tma/ewx/rm-api/api/db2/run`;
+    const apiUrl = `${process.env.TEST_API_URL}/ewx/rm-api/api/db2/run`;
     const fullUrl = `${apiUrl}?stationCode=${stationCode}&stationType=${stationType}&selectDate=${selectDate}&resultModelCode=${resultModelCode}${
       dateStartAccumulation
         ? `&dateStartAccumulation=${dateStartAccumulation}`
