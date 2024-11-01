@@ -18,7 +18,8 @@
     "react-dom": "^18",
     "react-icons": "^5.2.1",
     "react-spring": "^9.7.4",
-    "three": "^0.167.1"
+    "three": "^0.167.1",
+    "undici": "^6.20.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.46.0",
@@ -27,8 +28,6 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/three": "^0.167.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.4",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
