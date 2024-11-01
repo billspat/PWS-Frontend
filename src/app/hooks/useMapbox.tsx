@@ -5,15 +5,18 @@ import PopupContent from "../components/PopupContent";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
 
-const michiganBounds = [
-  [-95.4, 38.7],
-  [-73.4, 49.3],
-];
+// const michiganBounds = [
+//   [-95.4, 38.7],
+//   [-73.4, 49.3],
+// ];
+
+const michiganExtent = [-95.4, 38.7, -73.4, 49.3];
+
 
 const markerIcon = { src: "/mapIcon.svg" };
 const customStyleUrl = "mapbox://styles/jamesnoh123/cm0p46kww02ku01qrgqgh8erx";
 
-interface MarkerData {
+export interface MarkerData {
   latitude: number;
   longitude: number;
   name: string;
@@ -38,7 +41,7 @@ export const useMapbox = (
       center: center,
       zoom: initialZoom,
       pitch: initialPitch,
-      maxBounds: michiganBounds,
+      maxBounds: [-95.4, 38.7, -73.4, 49.3] // michiganExtent
     });
 
     mapRef.current.on("load", () => {
