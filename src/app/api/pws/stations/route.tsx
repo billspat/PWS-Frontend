@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { fetch, Agent } from 'undici';
+
 
 export async function GET() {
   const baseUrl = process.env.API_BASE_URL;
@@ -6,10 +8,31 @@ export async function GET() {
 
   try {
     const response = await fetch(url, {
+      // Mocks are also supported
       headers: {
-        accept: "application/json",
-      },
-    });
+            accept: "application/json",
+          },
+      dispatcher: new Agent({
+        connect: {
+          rejectUnauthorized: false,
+        },
+        keepAliveTimeout: 10,
+        keepAliveMaxTimeout: 10
+      })
+    })
+    
+    // const json = await res.json()
+
+
+// -----
+
+    // const response = await fetch(url, 
+    //   {
+    //   headers: {
+    //     accept: "application/json",
+    //   },
+      
+    // });
 
     if (!response.ok) {
       const errorData = await response.text();
