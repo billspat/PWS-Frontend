@@ -1,7 +1,7 @@
 import { StationResponse, StationData } from "../types";
 
 const getBaseUrl = () => {
-  const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+  const protocol = process.env.NODE_ENV === "production" ? "http" : "http";
   const host = process.env.VERCEL_URL || "localhost:3000";
   return `${protocol}://${host}`;
 };
